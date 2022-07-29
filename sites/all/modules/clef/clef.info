@@ -1,0 +1,15 @@
+name = Clef
+description = Provides the ability to log in with Clef.
+package = Authentication
+configure = admin/people/clef
+core = 7.x
+
+files[] = clef.module
+files[] = clef.install
+
+; Information added by Drupal.org packaging script on 2016-09-09
+version = "7.x-1.2"
+core = "7.x"
+project = "clef"
+datestamp = "1473441840"
+

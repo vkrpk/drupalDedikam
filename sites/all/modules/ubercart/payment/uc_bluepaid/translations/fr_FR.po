@@ -1,0 +1,158 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Dev2Com <contact@dev2com.fr>\n"
+"Language-Team:  <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.6.9\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Language: fr_FR\n"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Module information"
+msgstr "Informations sur le module"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Developed by"
+msgstr "Développé par"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Contact email"
+msgstr "E-mail de contact"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Module version"
+msgstr "Version du module"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Gateway version"
+msgstr "Version de la plateforme de paiement"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Tested with"
+msgstr "testé sur"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Gateway access"
+msgstr "Accès à la plateforme de paiement"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Site id"
+msgstr "Identifiant site"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Your Bluepaid merchant id"
+msgstr "Votre identifiant de compte d'encaissement Bluepaid"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Merchant id"
+msgstr "Identifiant de compte"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "TEST or PRODUCTION"
+msgstr "TEST ou PRODUCTION"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Payment gateway URL"
+msgstr "Url de la plateforme de paiement"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Link to the payment platform"
+msgstr "Lien vers la plateforme de paiement"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Default language of the payment gateway"
+msgstr "Langage par défait de la page de paiement"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Chinese"
+msgstr "Chinois"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Portuguese"
+msgstr "Portugais"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "ALL"
+msgstr "TOUT"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Amount restrictions"
+msgstr "Restrictions de montant"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Maximum Order Total"
+msgstr "Montant maximum"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Maximum amount for which this payment method is available"
+msgstr "Montant maximum pour lequel la méthode de paiement est disponible"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Minimum Order Total"
+msgstr "Montant minimum"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Minimum amount for which this payment method is available"
+msgstr "Montant minimum pour lequel la méthode de paiement est disponible"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Success url"
+msgstr "Url de retour après transaction"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Url the client will be redirected to after a successful payment"
+msgstr "Url sur laquelle sera redirigé votre client après transaction"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Return url"
+msgstr "Url de ertour"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Url the client will be redirected to by default"
+msgstr ""
+"url sur laquelle est redirigé votre client s'il ne valide pas la page de "
+"paiement"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Silent url to set in the Bluepaid back-office"
+msgstr ""
+"Url de confirmation bluepaid à positionner dans votre back-office bluepaid"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Custom checkout label"
+msgstr "Libellé personnalisé pour le paiement"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Custom checkout label to show to your client"
+msgstr "Libellé personnalisé pour le paiement, pour diriger votre client"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Payment page"
+msgstr "page de paiement"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Available languages"
+msgstr "langues disponibles"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Select ALL to use gateway config"
+msgstr "Sélectionnez \"TOUT\" pour utiliser la configuration de la plateforme"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid "Unknown variable @name"
+msgstr "Variable inconnue @name"
+
+#: /drupal/admin/store/settings/payment/method/uc_bluepaid
+msgid ""
+"We have no meta information for this variable. Please, ask module developers "
+"to declare their variables. See <a href=\"http://drupal.org/project/variable"
+"\">Variable module</a>."
+msgstr ""
+
+msgid "Un <em>Sujet</em> commence un nouveau fil de discussion dans un forum."
+msgstr ""

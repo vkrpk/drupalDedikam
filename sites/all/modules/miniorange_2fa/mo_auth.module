@@ -1,0 +1,337 @@
+<?php
+/**
+ * @file
+ * Module file for miniOrange 2FA Module.
+ */
+
+/**
+*  Implements hook_menu().
+*/
+function mo_auth_menu() {
+
+  $items['admin/config/people/mo_auth'] = array(
+    'title' => 'miniOrange Two-Factor Authentication',
+    'description' => 'Configure Two-Factor Authentication settings for your site.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_customer_setup'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'mo_auth_customer_setup.inc',
+  );
+
+  $items['admin/config/people/mo_auth/customer_setup'] = array(
+    'title' => 'Customer Profile',
+    'weight' => -4,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access arguments' => array('administer site configuration'),
+    'page arguments' => array('mo_auth_customer_setup'),
+    'file' => 'mo_auth_customer_setup.inc',
+  );
+
+  $items['admin/config/people/mo_auth/setup'] = array(
+    'title' => 'Setup Two-Factor',
+    'weight' => -3,
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('administer site configuration'),
+    'page arguments' => array('mo_auth_setup_twofactor'),
+    'page callback' => 'drupal_get_form',
+    'file' => 'mo_auth_setup_twofactor.inc',
+  );
+
+  $items['admin/config/people/mo_auth/login_settings'] = array(
+    'title' => 'Login Settings',
+    'weight' => -2,
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('administer site configuration'),
+    'page arguments' => array('mo_auth_login_settings'),
+    'file' => 'mo_auth_login_settings.inc',
+  );
+
+  $items['admin/config/people/mo_auth/licensing'] = array(
+    'title' => 'Licensing Plans',
+    'weight' => -1,
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('administer site configuration'),
+    'page arguments' => array('mo_auth_licensing'),
+    'file' => 'mo_auth_licensing.inc',
+  );
+
+  $items['admin/config/people/mo_auth/support'] = array(
+    'title' => 'Support',
+    'weight' => -1,
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('administer site configuration'),
+    'page arguments' => array('mo_auth_support'),
+    'file' => 'mo_auth_support.inc',
+  );
+
+  $items['login/user/%user/authenticate'] = array(
+    'title' => 'User account',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_authenticate_user', 2),
+    // No access restriction as user is not logged in yet.
+    'access callback' => TRUE,
+    'file' => 'authenticate_user.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['login/user/%user/register'] = array(
+    'title' => 'User account',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_inline_registration', 2),
+    // No access restriction as user is not logged in yet.
+    'access callback' => TRUE,
+    'file' => 'mo_auth_inline_registration.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/people/mo_auth/setup/user/%user/test/email-verification'] = array(
+    'title' => 'Test Email Verification',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_test_email_verification'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'test_email_verification.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/config/people/mo_auth/setup/user/%user/configure/google-authenticator'] = array(
+    'title' => 'Configure Google Authenticator',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_configure_google_authenticator'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'configure_google_authenticator.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+ 
+  $items['admin/config/people/mo_auth/setup/user/%user/configure/otp-over-sms'] = array(
+    'title' => 'Configure OTP Over SMS',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_configure_otp_over_sms'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'configure_otp_over_sms.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['admin/config/people/mo_auth/setup/user/%user/configure/otp-over-sms-and-email'] = array(
+    'title' => 'Configure OTP Over SMS And Email',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_configure_otp_over_sms_and_email'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'configure_otp_over_sms_and_email.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/config/people/mo_auth/setup/user/%user/test/google-authenticator'] = array(
+    'title' => 'Test Google Authenticator',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_test_google_authenticator'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'test_google_authenticator.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/config/people/mo_auth/setup/user/%user/configure/qrcode-authentication'] = array(
+    'title' => 'Configure QR Code Authenticator',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_configure_qrcode_authentication'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'configure_qrcode_authentication.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/config/people/mo_auth/setup/user/%user/test/qrcode-authentication'] = array(
+    'title' => 'Test QR Code Authenticator',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_test_qrcode_authentication'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'test_qrcode_authentication.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['admin/config/people/mo_auth/setup/user/%user/test/otp-over-sms'] = array(
+    'title' => 'Test OTP Over SMS',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_test_otp_over_sms'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'test_otp_over_sms.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['admin/config/people/mo_auth/setup/user/%user/test/otp-over-sms-and-email'] = array(
+    'title' => 'Test OTP Over SMS and Email',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_test_otp_over_sms_and_email'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'test_otp_over_sms_and_email.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+
+  $items['admin/config/people/mo_auth/setup/user/%user/configure/kba-authentication'] = array(
+    'title' => 'Configure Security Question (KBA)',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_configure_kba'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'configure_kba.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/config/people/mo_auth/setup/user/%user/test/kba-authentication'] = array(
+    'title' => 'Test QR Code Authenticator',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_test_kba_authentication'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'test_kba_authentication.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['admin/config/people/mo_auth/setup/user/%user/configure/soft-token'] = array(
+    'title' => 'Configure Soft Token',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_configure_qrcode_authentication'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'configure_qrcode_authentication.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['admin/config/people/mo_auth/setup/user/%user/test/soft-token'] = array(
+    'title' => 'Test Soft Token',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_test_google_authenticator'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'test_google_authenticator.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['admin/config/people/mo_auth/setup/user/%user/configure/push-notifications'] = array(
+    'title' => 'Configure Push Notifications',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_configure_qrcode_authentication'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'configure_qrcode_authentication.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['admin/config/people/mo_auth/setup/user/%user/test/push-notifications'] = array(
+    'title' => 'Test Push Notifications',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mo_auth_test_email_verification'),
+    'access callback' => 'mo_auth_is_user_logged_in',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'test_email_verification.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  return $items;
+}
+
+function mo_auth_form_user_login_alter(&$form, &$form_state, $form_id) {
+  if (MoAuthUtilities::isCustomerRegistered()) {
+    $loginSettings = new MoAuthLoginSettings();
+    if ($loginSettings->getEnable2Factor()) {
+      $form['#submit'] = array('mo_auth_form_alter_submit');
+    }
+  }
+}
+
+function mo_auth_form_user_login_block_alter(&$form, &$form_state, $form_id) {
+  if (MoAuthUtilities::isCustomerRegistered()) {
+    $loginSettings = new MoAuthLoginSettings();
+    if ($loginSettings->getEnable2Factor()) {
+      $form['#submit'] = array('mo_auth_form_alter_submit');
+    }
+  }
+}
+
+function mo_auth_form_alter(&$form, &$form_state, $form_id) {
+
+}
+
+function mo_auth_is_user_logged_in() {
+  global $user;
+  if (user_is_logged_in() && in_array('authenticated user', $user->roles)) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+function mo_auth_form_alter_submit(&$form, &$form_state) {
+  $username = $form_state['values']['name'];
+  $password = $form_state['values']['pass'];
+  unset($_GET['destination']);
+  if (!user_authenticate($username, $password)) {
+    form_set_error('name', t('Invalid username or password.'));
+    return;
+  }
+  $_SESSION['mo_auth']['status'] = '1ST_FACTOR_AUTHENTICATED';
+  $user = user_load_by_name($username);
+  $customer = new MiniorangeCustomerProfile();
+  $loginSettings = new MoAuthLoginSettings();
+  $license_type = variable_get('mo_auth_2fa_license_type', 'DEMO');
+  if (!empty($user->miniorange_registered_email)) {
+    $user_email = $user->miniorange_registered_email[LANGUAGE_NONE][0]['value'];
+    $license_type = variable_get('mo_auth_2fa_license_type', 'DEMO');
+    if ($license_type == 'PREMIUM') {
+      mo_auth_challenge_user($user, $form_state);
+      return;
+    } elseif (in_array('administrator', $user->roles) && $user_email == $customer->getRegisteredEmail()) {
+      mo_auth_challenge_user($user, $form_state);
+      return;
+    }
+  } elseif ($license_type == 'PREMIUM' && $loginSettings->getEnforceInlineRegistration()) {
+    $form_state['redirect'] = 'login/user/' . $user->uid . '/register';
+    unset($form_state['storage']);
+    return;
+  }
+  user_login_submit(array(), $form_state);
+}
+
+function mo_auth_form_alter_validate(&$form, &$form_state) {
+
+}
+
+function mo_auth_challenge_user($user, &$form_state) {
+ 
+  $user_email = $user->miniorange_registered_email[LANGUAGE_NONE][0]['value'];
+  
+  $customer = new MiniorangeCustomerProfile();
+  $miniorange_user = new MiniorangeUser($customer->getCustomerID(), $user_email, NULL, NULL, NULL);
+
+  $auth_api_handler = new AuthenticationAPIHandler($customer->getCustomerID(), $customer->getAPIKey());
+  $response = $auth_api_handler->challenge($miniorange_user);
+  
+
+  if ($response->status == 'SUCCESS') {
+    $_SESSION['mo_auth']['mo_challenge_response'] = $response;
+    $form_state['redirect'] = 'login/user/' . $user->uid . '/authenticate';
+  } else {
+    drupal_set_message(t('An error occured while processing your request. Please Try again.'), 'error');
+    drupal_goto('user');
+  }
+}
+
+function mo_auth_get_configured_methods($uid) {
+  $user = user_load($uid);
+  $configured_methods = array();
+  if (isset($user->configured_auth_methods) && !empty($user->configured_auth_methods)) {
+    $configured_methods = $user->configured_auth_methods[LANGUAGE_NONE];
+  }
+  foreach($configured_methods as $key => $value_array) {
+    $configured_methods[$key] = $value_array['value'];
+  }
+  return $configured_methods;
+}

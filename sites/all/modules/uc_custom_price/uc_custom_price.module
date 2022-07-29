@@ -1,0 +1,218 @@
+<?php
+
+/**
+ * @file
+ * Allows a block of PHP code to be associated with a product which can be
+ * tokenized and will be evaluated as the product is in the cart item state.
+ */
+
+
+/**
+ * Implements hook_help().
+ */
+function uc_custom_price_help($path) {
+  switch ($path) {
+    case 'admin/help/uc_custom_price':
+      return t('Allows PHP algorithm for determining product prices.');
+      break;
+
+    case 'admin/store/settings/custom-price':
+      return t('Configuration settings for the uc_custom_price module.');
+      break;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Defines configuration page for setting default $code per product class.
+ */
+function uc_custom_price_menu() {
+  $items = array();
+
+  $items['admin/store/settings/custom-price'] = array(
+    'title' => 'Custom pricing',
+    'description' => 'Define custom pricing algorithms on a per-class basis.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_custom_price_admin_settings'),
+    'access arguments' => array('administer custom price code'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'uc_custom_price.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function uc_custom_price_permission() {
+  return array(
+    'administer custom price code' => array(
+      'title' => t('Administer custom price code'),
+      'description' => t('Allows user to modify PHP price calculation code.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_uc_cart_item().
+ *
+ * Price calculation takes place here.
+ */
+function uc_custom_price_uc_cart_item($op, $item) {
+  switch ($op) {
+    case 'load':
+      $product = node_load($item->nid);
+      // should really initialize this on load so we don't have to check later
+      $code = isset($product->custom_code) ? $product->custom_code : '';
+      if (!empty($code)) {
+        $eval_code = token_replace($code, array('product' => $product, 'uc_cart_item' => $item));
+        eval($eval_code);
+      }
+      break;
+  }
+}
+
+function uc_custom_price_uc_product_alter(&$items) {
+/*
+	// manually call function for each cart item
+	foreach ($items as &$item) {
+		uc_custom_price_uc_cart_item('load', $item);
+	}
+*/
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function uc_custom_price_node_view($node) {
+  if (isset($node->custom_code) &&
+      $node->custom_code != '$item->price = $item->price;') {
+    $item = clone $node;
+    $item->qty = $node->default_qty;
+	$item->price = $node->sell_price;
+    $eval_code = token_replace($node->custom_code, array('product' => $node));
+    eval($eval_code);
+    // $eval_code is normally written to operate on the cart context, which is
+    // different than the product view.  For example, $item->qty is defined
+    // in the cart, but not on the product page (where quantity has not yet
+    // been entered by the customer!).  So it's easily possible to write PHP
+    // $eval_code that works in the cart but not on the product page.  We should
+    // try to protect against that, and only set sell_price and display_price
+    // when the eval() succeeds.
+    $node->content['sell_price']['#value']    = $item->price;
+    $node->content['display_price']['#value'] = $item->price;
+  }
+}
+
+/**
+ * Implements hook_node_load().
+ */
+function uc_custom_price_node_load($nodes, $types) {
+  // Check to see if any of these nodes are Ubercart Product types.
+  $product_types = array_intersect(uc_product_types(), $types);
+  if (empty($product_types)) {
+    return;
+  }
+
+  // One query, for speed.
+  $result = db_query("SELECT * FROM {uc_custom_price} WHERE nid IN(:nids)",
+                     array(':nids' => array_keys($nodes)));
+  foreach ($result as $record) {
+    if (uc_product_is_product($nodes[$record->nid]->type)) {
+      $nodes[$record->nid]->custom_code = $record->custom_code;
+    }
+  }
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function uc_custom_price_node_insert($node) {
+  // Falls through to hook_node_update()
+  uc_custom_price_node_update($node);
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function uc_custom_price_node_update($node) {
+  if (uc_product_is_product($node->type)) {
+    if (strlen($node->custom_code) == 0) {
+      // Shouldn't this default to the default string?
+      db_delete('uc_custom_price')
+        ->condition('nid', $node->nid)
+        ->execute();
+    }
+    else {
+      $num_rows = db_select('uc_custom_price')
+        ->fields('uc_custom_price')
+        ->condition('nid', $node->nid)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+
+      if ($num_rows == 0) {
+        db_insert('uc_custom_price')
+          ->fields(array(
+              'nid' => $node->nid,
+              'custom_code' => $node->custom_code
+            ))
+          ->execute();
+      }
+      else {
+        db_update('uc_custom_price')
+          ->fields(array('custom_code' => $node->custom_code))
+          ->condition('nid', $node->nid)
+          ->execute();
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function uc_custom_price_node_delete($node) {
+  db_delete('uc_custom_price')
+    ->condition('nid', $node->nid)
+    ->execute();
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Adds a textfield to the node edit page for Ubercart Product types,
+ * allowing the admin to input PHP code for the custom price calculation.
+ */
+function uc_custom_price_form_alter(&$form, &$form_state, $form_id) {
+  if (uc_product_is_product_form($form)) {
+    $node = node_load($form['nid']['#value']);
+    // $node->type isn't available on node/add/%type, only on node/%/edit
+    $type = isset($node->type) ? $node->type : $form['type']['#value'];
+
+    // Default is configurable on a per-product-type basis
+    $custom_code = !empty($node->custom_code) ?
+                   $node->custom_code         :
+                   variable_get('uc_custom_price_' . $type . '_default_code',
+                                '$item->price = $item->price;');
+
+    $form['custom_price_fieldset'] = array(
+      '#type'        => 'fieldset',
+      '#title'       => t('Custom Price Calculation'),
+      '#access'      => user_access('administer custom price code'),
+      '#collapsible' => TRUE,
+      '#collapsed'   => TRUE,
+    );
+    $form['custom_price_fieldset']['custom_code'] = array(
+      '#type'          => 'textarea',
+      '#title'         => t('Custom Code'),
+      '#access'        => user_access('administer custom price code'),
+      '#description'   => t('Enter PHP code to be used for dynamic price calculation.'),
+      '#default_value' => $custom_code,
+      '#wysiwyg'       => FALSE,
+    );
+  }
+}

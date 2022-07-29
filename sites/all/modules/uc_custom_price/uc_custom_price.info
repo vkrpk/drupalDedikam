@@ -1,0 +1,14 @@
+name = Custom Price
+description = Allows the price field to be calculated with a custom equation.
+dependencies[] = uc_product
+package = Ubercart - extra
+core = 7.x
+
+configure = admin/store/settings/custom-price
+
+; Information added by drupal.org packaging script on 2012-02-24
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "uc_custom_price"
+datestamp = "1330087413"
+

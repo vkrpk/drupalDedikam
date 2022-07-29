@@ -1,0 +1,107 @@
+<?php
+
+// Form-generating function for the editing form.
+function dedikam_quota_refresh_form($form, $form_state, $member_access) {
+	
+	$form['access_id'] = array(
+		'#type' => 'hidden',
+		'#value' => $member_access->id,
+	);
+
+	$form['access_name'] = array(
+		'#type' => 'hidden',
+		'#value' => $member_access->name,
+	);
+
+	$form['access_quota'] = array(
+		'#type' => 'hidden',
+		'#value' => $member_access->quota,
+	);
+
+	$form['btrefresh'] = array(
+        '#title' => '',
+        '#type' => 'image_button',
+        '#src' => '/sites/default/files/refresh.png',
+		'#ajax' => array(
+			'callback' => 'ajax_set_refresh_callback',
+            'wrapper' => 'btrefresh'.$member_access->id,
+			'effect' => 'none',
+            'method' => 'replace',
+            'progress' => array(
+				'type' => 'throbber',
+				'message' => NULL,
+			),
+		),
+	);
+
+	return $form;
+}
+
+function ajax_set_refresh_callback($form, &$form_state) {
+    $id = $form_state['values']['access_id'];
+    $quota = intval($form_state['values']['access_quota']);
+    $size = trim(shell_exec('/mnt/mfs/quotaCheck.sh '.$form_state['values']['access_name']));
+    if (is_numeric($size)) {
+        $date =date('U');
+        // mise à jour de la bdd
+        db_update('dedikam_member_access')
+            ->condition('id', intval($id))
+            ->fields(array(
+                'lastquotacheck' => $size,
+                'quotacheckdatetime' => $date,
+                )
+            )
+            ->execute();    
+
+        // vérification du quota
+        $member = member_access_load($id);
+        if (($size / $quota) > ($member->alert_quota_threshold / 100.0))
+        {
+            $key = 'overquota_'.$id;
+            $subject = 'Dépassement du quota de l\'accès '.$member->name.' ( '.$member->payee.' )';
+            $subject = 'Dépassement du quota';
+            $body = array();
+            $body[] = "Bonjour ".$member->member.",\n";
+            $body[] = 'L\'espace disque utilisé par l\'accès '.$member->name.' ('.$member->payee.') a dépassé les '.$member->alert_quota_threshold.'% des '.dedikam_affiche_unite($quota).' autorisés.';
+            if ($quota > $size) {
+                $body[] = '';
+            }
+            dedikam_sendmail($key, $subject, $member->mail, $body);
+        }
+        
+        // mise à jour de l'interface
+        $chart = array(
+            '#title' => '',
+            '#chart_id' => 'quota'.$id,
+            '#type' => 'bvo',
+            '#legend_position' => CHART_LEGEND_BOTTOM,
+            '#size' => chart_size(80, 90),
+            '#bar_size' => chart_bar_size(15,5),
+            '#chart_fill' => chart_fill('bg', 'f4f7e700'),   
+            '#adjust_resolution' => TRUE,
+        );
+        if ($size > $quota) {
+            if ($quota == -1) {
+                $lastquotacheck = 0;
+                $quota = 1;
+            } else {
+                $lastquotacheck = $quota;
+            }
+        } else {
+            $lastquotacheck = $size;
+        }
+        $chart['#data'][] = array($lastquotacheck);
+        $chart['#data'][] = array($quota);
+        $chart['#data_colors'] [] = '660000';
+        $chart['#data_colors'] [] = '66FF66';
+
+        return array(
+            '#type' => 'ajax',
+            '#commands' => array(
+                ajax_command_replace("#ajax_consomme_$id", "<div id=\"ajax_consomme_$id\"><i>Esp. consommé :</i> ".($quota == 1 ? '0' : round(100 * $size /$quota,0)).' %&nbsp;</div>'),
+                ajax_command_replace("#ajax_datemaj_$id", "<div id=\"ajax_datemaj_$id\"><i>Dernière vérification du quota :</i> ".dedikam_epochtodate($date,'d/m/Y à H:i').'</div>'),
+                ajax_command_replace("#ajax_espace_$id", "<div id=\"ajax_espace_$id\">".theme('chart', array('chart' => $chart)).'<br/>'.dedikam_affiche_unite_bi($size).'</div>'),
+            ),
+        );
+    }
+}

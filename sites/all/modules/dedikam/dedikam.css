@@ -1,0 +1,10 @@
+.block-user,.block-menu,.block-block {
+	outline:1px solid black;
+}
+
+.block-user h2,.block-menu h2,.block-block h2 {
+	color:white;
+	background-color:#7dc32d;
+	text-align:center;
+	text-shadow:none;
+}

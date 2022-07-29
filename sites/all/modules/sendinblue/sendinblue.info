@@ -1,0 +1,31 @@
+name = SendinBlue
+description = SendinBlue email service integration.
+core = 7.x
+
+files[] = includes/Api/SendinblueApiV2.php
+files[] = includes/Api/SendinblueApiV3.php
+files[] = includes/Api/SendInBlueApiInterface.php
+files[] = includes/Http/SendinblueHttpClient.php
+
+files[] = includes/sendinblue.mailin.php
+files[] = includes/sendinblue.config.php
+files[] = includes/sendinblue.logger.php
+
+files[] = includes/sendinblue.manage.inc
+files[] = includes/sendinblue.mail.inc
+files[] = includes/sendinblue_signup.entity.inc
+files[] = includes/sendinblue_signup.ui_controller.inc
+
+dependencies[] = libraries (>=2)
+dependencies[] = entity
+
+configure = admin/config/system/sendinblue
+
+; Information added by Drupal.org packaging script on 2014-09-16
+core = "7.x"
+
+; Information added by Drupal.org packaging script on 2021-04-04
+version = "7.x-2.0"
+core = "7.x"
+project = "sendinblue"
+datestamp = "1617554800"

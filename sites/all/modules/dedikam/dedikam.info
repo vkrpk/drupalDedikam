@@ -1,0 +1,6 @@
+name = Dedikam
+description = Dedikam Module
+package = Dedikam
+core = 7.x
+dependencies[] = rules
+dependencies[] = entity

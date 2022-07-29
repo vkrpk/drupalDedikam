@@ -1,0 +1,356 @@
+<?php
+#####################################################################################################
+#
+#					Module pour la plateforme de paiement Bluepaid
+#						Version : 1.0
+#									########################
+#					Développé pour Ubercart
+#						Version : 3.0
+#						Compatibilité plateforme : V2
+#									########################
+#					Développé par Dev2Com
+#						http://www.dev2com.com/
+#						21/05/2015
+#						Contact : support@dev2com.fr
+#
+#####################################################################################################
+
+// Load Bluepaid class
+if (!class_exists('Bluepaid')) {
+	include_once('uc_bluepaid.inc');
+}
+
+
+/**
+ * hook menu (list of access points to the module)
+ */
+function uc_bluepaid_menu() {
+	$items = array();	
+	$items['uc_bluepaid/complete'] = array(
+   		'title' => 'Bluepaid payment complete',
+		'page callback' => 'uc_bluepaid_complete',
+    	'access callback' => TRUE,
+		//'access arguments' => array('access content'),
+		'type' => MENU_CALLBACK,
+		'file' => 'uc_bluepaid.pages.inc',
+    );
+	$items['uc_bluepaid/cancel'] = array(
+	  'title' => 'Bluepaid payment canceled',
+	  'page callback' => 'uc_bluepaid_cancel',
+	  'access arguments' => array('access content'),
+	  'type' => MENU_CALLBACK,
+	  'file' => 'uc_bluepaid.pages.inc',
+	);
+	$items['uc_bluepaid/ipn'] = array(
+   		'title' => 'Bluepaid IPN',
+		'page callback' => 'uc_bluepaid_ipn',
+    	'access callback' => TRUE,
+		//'access arguments' => array('access content'),
+		'type' => MENU_CALLBACK,
+		'file' => 'uc_bluepaid.pages.inc',
+    );
+	    
+	return $items;
+}
+
+function uc_bluepaid_uc_payment_gateway() {
+	$gateways['uc_bluepaid'] = array(
+	  'title' => t('Bluepaid'),
+	  'description' => t('Process payments through my custom payment gateway'),
+	);
+	return $gateways;
+}
+
+/**
+ * Implements hook_uc_payment_method().
+ */
+function uc_bluepaid_uc_payment_method() {
+	$path = base_path() . drupal_get_path('module', 'uc_bluepaid');
+	$title = '<img src="' . $path . '/Bluepaid.png" alt="Bluepaid" class="uc-credit-cctype" />';
+	$title .= t('Pay by credit card with Bluepaid');
+	
+	$methods[] = array(
+	  'id' => 'uc_bluepaid',
+	  'name' => t('Bluepaid'),
+	  'title' => $title,
+	  'desc' => t('Processes Secure payment by credit card'),
+	  'callback' => 'uc_bluepaid_method',
+	  'redirect' => 'uc_bluepaid_form',
+	  'weight' => 1,
+	  'checkout' => TRUE,
+	  'no_gateway' => TRUE,
+	);
+	return $methods;
+}
+
+/**
+ * Settings
+ */
+function uc_bluepaid_method($op, &$order) {
+  switch ($op) {
+    case 'settings':
+		$bluepaid = new Bluepaid();
+		// Module info
+		$form['uc_bluepaid']['uc_bluepaid_info'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Module information')
+		);
+		
+		$form['uc_bluepaid']['uc_bluepaid_info']['uc_bluepaid_developed_by'] = array(
+			'#type' => 'item',
+			'#title' => t('Developed by'),
+			'#markup' => '<a target="_blank" href="http://www.dev2com.com">Dev2Com</a>'
+		);
+		$form['uc_bluepaid']['uc_bluepaid_info']['uc_bluepaid_contact'] = array(
+			'#type' => 'item',
+			'#title' => t('Contact email'),
+			'#markup' => '<a href="mailto:support@dev2com.fr">support@dev2com.fr</a>'
+		);
+		$form['uc_bluepaid']['uc_bluepaid_info']['uc_bluepaid_contrib'] = array(
+			'#type' => 'item',
+			'#title' => t('Module version'),
+			'#markup' => '1.0'
+		);
+		$form['uc_bluepaid']['uc_bluepaid_info']['uc_bluepaid_cms'] = array(
+			'#type' => 'item',
+			'#title' => t('Tested with'),
+			'#markup' => 'Ubercart 3.0'
+		);
+		
+		$form['uc_bluepaid']['uc_bluepaid_info']['uc_bluepaid_gateway'] = array(
+			'#type' => 'item',
+			'#title' => t('Gateway version'),
+			'#markup' => 'V2'
+		);
+		// Gateway access settings
+		$form['uc_bluepaid']['uc_bluepaid_gateway_access'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Gateway access')
+		);
+		
+		$form['uc_bluepaid']['uc_bluepaid_gateway_access']['uc_bluepaid_merchant_id'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Merchant id'),
+			'#description' => t('Your Bluepaid merchant id'),
+			'#default_value' => variable_get('uc_bluepaid_merchant_id', '12345XXX')
+		);
+		$form['uc_bluepaid']['uc_bluepaid_gateway_access']['uc_bluepaid_ctx_mode'] = array(
+			'#type' => 'select',
+			'#title' => t('Mode'),
+			'#description' => t('TEST or PRODUCTION'),
+			'#options' => array(
+				'TEST' => t('Test'),
+				'PRODUCTION' => t('Production')
+			),
+			'#default_value' => variable_get('uc_bluepaid_ctx_mode', 'TEST')
+		);
+		$form['uc_bluepaid']['uc_bluepaid_gateway_access']['uc_bluepaid_platform_url'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Payment gateway URL'),
+			'#description' => t('Link to the payment platform. Set to '.$bluepaid->getPlatformAction().' by default'),
+			'#default_value' => variable_get('uc_bluepaid_platform_url', $bluepaid->getPlatformAction())
+		);
+		$form['uc_bluepaid']['uc_bluepaid_gateway_access']['uc_bluepaid_text_customer'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Custom checkout label'),
+			'#description' => t('Custom checkout label to show to your client'),
+			'#default_value' => variable_get('uc_bluepaid_text_customer', 'Pay by credit card with Bluepaid')
+		);
+	
+		// Payment page settings
+		$form['uc_bluepaid']['uc_bluepaid_payment_page'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Payment page')
+		);
+		$form['uc_bluepaid']['uc_bluepaid_payment_page']['uc_bluepaid_language'] = array(
+			'#type' => 'select',
+			'#title' => t('Language'),
+			'#description' => t('Default language of the payment gateway'),
+			'#options' => array(
+				'fr' => t('French'),
+				'en' => t('English'),
+				'es' => t('Spanish'),
+				'de' => t('German'),
+				'it' => t('Italian'),
+				'zh' => t('Chinese'),
+				'ja' => t('Japanese'),
+				'pt' => t('Portuguese'),
+				'nl' => t('Dutch')
+			),
+			'#default_value' => variable_get('uc_bluepaid_language', 'fr')
+		);
+		$form['uc_bluepaid']['uc_bluepaid_payment_page']['uc_bluepaid_available_languages'] = array(
+			'#type' => 'select',
+			'#multiple' => TRUE,
+			'#title' => t('Available languages'),
+			'#description' => t('Select ALL to use gateway config'),
+			'#options' => array(
+				'' => t('ALL'),
+				'fr' => t('French'),
+				'en' => t('English'),
+				'es' => t('Spanish'),
+				'de' => t('German'),
+				'it' => t('Italian'),
+				'zh' => t('Chinese'),
+				'ja' => t('Japanese'),
+				'pt' => t('Portuguese'),
+				'nl' => t('Dutch')
+			),
+			'#default_value' => variable_get('uc_bluepaid_available_languages', '')
+		);
+		$form['uc_bluepaid']['uc_bluepaid_payment_page']['uc_bluepaid_available_currencies'] = array(
+			'#type' => 'select',
+			'#multiple' => TRUE,
+			'#title' => t('Available currencies'),
+			'#description' => t('Select ALL to use gateway config'),
+			'#options' => array(
+				'' => t('ALL'),
+				'eur' => t('EUR'),
+				'usd' => t('USD'),
+				'gbp' => t('GBP'),
+				'jpy' => t('JPY'),
+				'cad' => t('CAD'),
+				'aud' => t('AUD'),
+				'chf' => t('CHF'),
+			),
+			'#default_value' => variable_get('uc_bluepaid_available_currencies', 'eur')
+		);
+	
+		// Amount restrictions settings
+		$form['uc_bluepaid']['uc_bluepaid_amount_restrictions'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Amount restrictions')
+		);
+		
+		$form['uc_bluepaid']['uc_bluepaid_amount_restrictions']['uc_bluepaid_amount_max'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Maximum Order Total'),
+			'#description' => t('Maximum amount for which this payment method is available'),
+			'#default_value' => variable_get('uc_bluepaid_amount_max', '')
+		);
+		$form['uc_bluepaid']['uc_bluepaid_amount_restrictions']['uc_bluepaid_amount_min'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Minimum Order Total'),
+			'#description' => t('Minimum amount for which this payment method is available'),
+			'#default_value' => variable_get('uc_bluepaid_amount_min', '')
+		);
+		
+		// Return to shop settings
+		$form['uc_bluepaid']['uc_bluepaid_return_settings'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Return options')
+		);  
+  
+		$form['uc_bluepaid']['uc_bluepaid_return_settings']['uc_bluepaid_url_success'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Success url'),
+			'#description' => t('Url the client will be redirected to after a successful payment'),
+       	 	'#default_value' => variable_get('uc_bluepaid_url_success', 'cart/checkout/complete'),
+        	'#size' => 32,
+       		'#field_prefix' => url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q='),
+		);
+		$form['uc_bluepaid']['uc_bluepaid_return_settings']['uc_bluepaid_url_return'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Return url'),
+			'#description' => t('Url the client will be redirected to by default'),
+       	 	'#default_value' => variable_get('uc_bluepaid_url_return', 'cart'),
+        	'#size' => 32,
+       		'#field_prefix' => url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q='),
+		);
+		$form['uc_bluepaid']['uc_bluepaid_return_settings']['uc_bluepaid_ip_servers'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Bluepaid\'s server Ip'),
+			'#description' => t('IP addresses authorized to cimmunicate with your server (Bluepaid Ips)'),
+       	 	'#default_value' => variable_get('uc_bluepaid_ip_servers', '193.33.47.34;193.33.47.35;193.33.47.39;87.98.218.80;46.105.55.251'),
+		);
+		$form['uc_bluepaid']['uc_bluepaid_return_settings']['uc_bluepaid_url_check'] = array(
+			'#type' => 'item',
+			'#title' => t('Silent url to set in the Bluepaid back-office'),
+			'#description' => url('uc_bluepaid/ipn',array('absolute'=>TRUE)),
+		);
+		return $form;
+  }
+}
+
+/**
+ * Bluepaid form.
+ */
+function uc_bluepaid_form($form, &$form_state, $order) {
+	global $language;
+	
+	
+	// Process amount restrictions verification
+	$amountMin = variable_get('uc_bluepaid_amount_min');
+	$amountMax = variable_get('uc_bluepaid_amount_max');
+	if (($amountMax && $order->order_total > $amountMax) ||
+	   ($amountMin && $order->order_total < $amountMin)) {
+			
+		drupal_set_message(t('This payment method is not available for your order amount'), 'warning');
+		return ;
+	}
+	
+	$bluepaid = new Bluepaid();
+	
+	//Load available currencies
+	$availableCurrencies = $bluepaid->getSupportedCurrencies();
+	$currency = strtolower($order->currency);	
+	if(!in_array($currency, $availableCurrencies)) {
+		drupal_set_message(t('This payment method is not available for your currency'), 'warning');
+		return ;
+	}
+	
+	$bluepaid->__set('amount', $order->order_total);
+	$bluepaid->__set('currency', $currency);
+	$bluepaid->__set('order_id', $order->order_id);
+	$bluepaid->__set('boutic_id', variable_get('uc_bluepaid_merchant_id', ''));
+	
+	
+	// Collect some information about the order
+	$cart_id = uc_cart_get_id();
+	
+	
+	// Load default language
+	$availableLangs = $bluepaid->getSupportedLanguages();
+	$lang = strtolower($language->language);
+	if(!in_array($lang, $availableLangs)) {
+		$lang = variable_get('uc_bluepaid_language', 'fr');
+	}
+	
+	// Build the data to send to blueapid gateway
+	$data = array(
+		'id_client' => $bluepaid->__get('order_id'),
+		'id_boutique' => $bluepaid->__get('boutic_id'),
+		'devise' => strtoupper($bluepaid->__get('currency')),
+		'langue' => strtoupper($lang),
+		'url_retour_ok' => $bluepaid->get_url_success(),
+		'url_retour_stop' => $bluepaid->get_url_failed(),
+		'montant' => number_format($bluepaid->__get('amount'), 2, '.', ''),
+		'email_client' => $order->primary_email,
+		'nom' => $order->billing_last_name,
+		'prenom' => $order->billing_first_name,
+		'pays_liv' => $order->billing_last_name,
+		'telephone' => $order->delivery_phone,
+		'adresse' => $order->delivery_street1.' '.$order->delivery_street2,
+		'cpo' => $order->delivery_postal_code,
+		'ville' => $order->billing_city,
+		'set_secure_return' => true,
+		'set_secure_conf' => true,
+	);
+	
+	// This code goes behind the final checkout button of the checkout pane
+	foreach ($data as $name => $value) 
+	{
+		if (!empty($value)) 
+		{
+			$form[$name] = array('#type' => 'hidden', '#value' => $value);
+		}
+	}
+	
+	$form['#action'] = variable_get('uc_bluepaid_platform_url', $bluepaid->getPlatformAction());
+	$form['actions'] = array('#type' => 'actions');
+	$form['actions']['submit'] = array(
+		'#type' => 'submit',
+		'#value' => variable_get('uc_bluepaid_text_customer', t('Submit Orders')),
+	);
+	return $form;
+}

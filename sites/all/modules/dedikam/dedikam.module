@@ -1,0 +1,266 @@
+<?php
+/**
+ * @file
+ * dedikam 
+ */
+
+module_load_include('inc','dedikam','dedikam.entity');
+module_load_include('inc','dedikam','dedikam.permission');
+module_load_include('inc','dedikam','dedikam.forms');
+module_load_include('inc','dedikam','dedikam.hooks');
+module_load_include('inc','dedikam','dedikam.functions');
+module_load_include('inc','dedikam','dedikam.cron');
+
+/*
+ * Implements hook_menu()
+ */
+function dedikam_menu() {
+	$items = array();
+	
+	// Register for the URL that mymodule_myentity_uri() returns.
+	// The wildcard %entity_object in the URL is handled by the Entity
+	// API function entity_object_load().
+	/*
+	$items['member_access/%member_access'] = array(
+		'load arguments' => array(1),
+		'title callback' => 'dedikam_member_access_page_title',
+		'title arguments' => array(1),
+		'page callback' => 'entity_view',
+		'page arguments' => array(1),
+		'access callback' => 'dedikam_member_access_access',
+		'access arguments' => array('view', array(1)),
+		'type' => MENU_CALLBACK,
+	);
+	*/
+	$items['user/member_access/%member_access/edit'] = array(
+		'title callback' => 'dedikam_member_access_page_title',
+		'title arguments' => array(2),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dedikam_member_access_form','user',2),
+		'access callback' => 'dedikam_member_access_access',
+		'access arguments' => array('edit', 2),
+		'type' => MENU_CALLBACK,
+	);
+	$items['admin/member_access/%member_access/edit'] = array(
+		'title callback' => 'dedikam_member_access_page_title',
+		'title arguments' => array(2),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dedikam_member_access_form','admin',2),
+		'access callback' => 'dedikam_member_access_access',
+		'access arguments' => array('admin', array(2)),
+		'type' => MENU_CALLBACK,
+	);
+	$items['dedikam/offres/form'] = array(
+		'title' => t('Our offers'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dedikam_offers_form','new',NULL),
+		'access callback' => 'dedikam_offer_access',
+		'access arguments' => array('view'),
+		'type' => MENU_CALLBACK,
+	);
+	$items['user/offres/%member_access/edit'] = array(
+		'title' => 'Modifier l\'offre',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dedikam_offers_form','edit',2),
+		'access callback' => 'dedikam_offer_access',
+		'access arguments' => array('view'),
+		'type' => MENU_CALLBACK,
+	);
+	$items['user/offres/%member_access/renew'] = array(
+		'title' => 'Renouveler l\'offre',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dedikam_offers_form','renew',2),
+		'access callback' => 'dedikam_offer_access',
+		'access arguments' => array('view'),
+		'type' => MENU_CALLBACK,
+	);
+	$items['storage/%member_access/autocomplete'] = array(
+		'page callback' => 'dedikam_member_files_callback',
+		'page arguments' => array(1),
+		'access callback' => 'dedikam_member_access_access',
+		'access arguments' => array('edit',0),
+		//'access arguments' => array('access content'),
+		'type' => MENU_CALLBACK,
+	);
+	$items['sauvegardes_incrementales/%sauvegarde/delete'] = array(
+		'title' => 'Suppression d\'une sauvegarde incrémentale',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dedikam_sauvegarde_incrementale_confirm_delete_form',1),
+		'access callback' => 'dedikam_eb_access',
+		'access arguments' => array('I',1),
+		'type' => MENU_LOCAL_TASK,
+	);
+	$items['sauvegardes_externes/%sauvegarde/edit'] = array(
+		'title' => 'Modification de la sauvegarde externalisée',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dedikam_sauvegarde_externalisee_edit_form',1),
+		'access callback' => 'dedikam_eb_access',
+		'access arguments' => array('E',1),
+		'type' => MENU_CALLBACK,
+	);
+
+        $items['user/%user/termination'] = array(
+            'title' => 'Résilier',
+            'page callback' => 'dedikam_termination_page',
+            'page arguments' => NULL,
+            'access callback' => TRUE,
+            'type' => MENU_LOCAL_TASK,
+            'weight' => 10,
+        );
+
+        $items['user/member_access/%member_access/options'] = array(
+                'title' => 'Activation et désactivation des options de l\'accès',
+                'page callback' => 'drupal_get_form',
+                'page arguments' => array('dedikam_options_form',2),
+                'access callback' => 'dedikam_member_access_access',
+                'access arguments' => array('edit',2),
+                'type' => MENU_CALLBACK,
+        );
+
+	$items['admin/incidents/form'] = array(
+		'title' => 'Ajouter un incident',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dedikam_incident_form',NULL),
+		'access callback' => 'dedikam_incident_access',
+		'access arguments' => array('view'),
+		'type' => MENU_CALLBACK,
+	);
+	$items['admin/incidents/%incident/edit'] = array(
+		'title' => 'Modifier l\'incident',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dedikam_incident_form',2),
+		'access callback' => 'dedikam_incident_access',
+		'access arguments' => array('view'),
+		'type' => MENU_CALLBACK,
+	);
+
+	$items['admin/serveurs/form'] = array(
+		'title' => 'Ajouter un serveur',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dedikam_serveur_form',NULL),
+		'access callback' => 'dedikam_serveur_access',
+		'access arguments' => array('view'),
+		'type' => MENU_CALLBACK,
+	);
+	$items['admin/serveurs/%serveur/edit'] = array(
+		'title' => 'Modifier le serveur',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dedikam_serveur_form',2),
+		'access callback' => 'dedikam_serveur_access',
+		'access arguments' => array('view'),
+		'type' => MENU_CALLBACK,
+	);
+    
+	$items['dedikam/ajax'] = array(
+		'page callback' => 'dedikam_ajax_callback',
+		'access callback' => TRUE,
+		'delivery callback' => 'drupal_json_output',
+	);
+
+	$items['dedikam/ajax/%/%'] = array(
+		'page callback' => 'dedikam_ajax_callback',
+		'page arguments' => array(2,3),
+		'access callback' => TRUE,
+		'delivery callback' => 'drupal_json_output',
+	);
+
+	$items['cifs/ajax/%/%member_access'] = array(
+		'title' => 'callback CIFS',
+		'type' => MENU_CALLBACK,
+		'page callback' => 'ajax_cifs_response',
+		'page arguments' => array(2,3),
+		'access arguments' => array('access content'),
+	);
+
+        $items['webdav/ajax/%/%member_access'] = array(
+                'title' => 'callback WEBDAV',
+                'type' => MENU_CALLBACK,
+                'page callback' => 'ajax_webdav_response',
+                'page arguments' => array(2,3),
+                'access arguments' => array('access content'),
+        );
+
+        $items['iscsi/ajax/%/%member_access'] = array(
+                'title' => 'callback iSCSI',
+                'type' => MENU_CALLBACK,
+                'page callback' => 'ajax_iscsi_response',
+                'page arguments' => array(2,3),
+                'access arguments' => array('access content'),
+        );
+ 
+	return $items;
+}
+
+/*
+ * Title callback function registered above
+ *
+function dedikam_member_access_page_title($entity) {
+	$query = db_select('dedikam_member_access', 'd');
+	$query->join('users','u','d.member_id = u.uid');
+	$query->addField('d','name','account');
+	$query->addField('u','name','member');
+	$query->condition('d.id',$entity->id,'=');
+	$member = $query->execute()->fetchAssoc();
+	return t("Member @member - account @account", array(
+			'@member' => $member['member'], 
+			'@account' => $member['account'],
+		)
+	);
+}
+*/
+
+/*
+ * Title callback function registered above
+ */
+function dedikam_incidents_etat_menu_title($entity) {
+    $etat = incident_flag();
+    if ($etat == 0) {
+        return 'Incidents en cours';
+    } else {
+        return 'Etat des services';
+    }
+}
+
+/*
+ * Title callback function registered above
+ */
+function dedikam_sauvegarde_incrementale_page_title($member) {
+	$retour = 'Sauvegardes incrémentales de l\'accès '.$member->name;
+	if ($member->payee != '') {
+		$retour .= ' - '.$member->payee;
+	}
+	return $retour;
+}
+/*
+function dedikam_sauvegardes_externes_page_title($eb) {
+	$member = member_access_load($eb->access_id);
+    $retour = 'Modification de la sauvegarde externalisée de l\'accès '.$member->name;
+	if ($member->payee != '') {
+		$retour .= ' - '.$member->payee;
+	}
+	return $retour;
+}
+*/
+function dedikam_block_view($delta = '') {
+	switch($delta) {
+		case 'edit_member_block':
+			$block['content'] = drupal_get_form('dedikam_member_access_admin_form');
+			break;
+	}
+	return $block;
+}
+
+function dedikam_ajax_callback($type = 'ajax', $arg) {
+	global $user;
+	if ($type == 'logout') {
+		if (is_numeric($arg) && $user->uid == $arg) {
+			$user = user_load($arg);
+			$field = field_get_items('user', $user, 'field_logout_at');
+			$field_value = intval($field[0]['value']);
+			$reponse = array (
+				'logout' => $field_value > 0 && $field_value < date('U') ? 1 : 0,
+			);
+			return $reponse;
+		}
+	}
+}

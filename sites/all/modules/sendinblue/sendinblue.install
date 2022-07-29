@@ -1,0 +1,177 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the sendinblue module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function sendinblue_schema() {
+  $schema['sendinblue_signup'] = array(
+    'fields' => array(
+      'mcsId' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique sendinblue_signup entity ID.',
+      ),
+      'name' => array(
+        'description' => 'The machine-readable name of this sendinblue_signup.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'mcLists' => array(
+        'type' => 'blob',
+        'not null' => TRUE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of list IDs with list-specific configuration.',
+      ),
+      'mode' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'Signifies the display mode for this signup form.',
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'description' => 'The {sendinblue_lists}.label of this sendinblue_list.',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'settings' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized object that stores the settings for the specific list.',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        // Set the default to ENTITY_CUSTOM without using the constant as it is
+        // not safe to use it at this point.
+        'default' => 0x01,
+        'size' => 'tiny',
+        'description' => 'The exportable status of the entity.',
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('mcsId'),
+    'unique key' => array('name'),
+  );
+
+  $schema['sendinblue_contact'] = array(
+    'fields' => array(
+      'sc_id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique sendinblue_contact entity ID.',
+      ),
+      'email' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Unique Key: Unique the email of a subscriber.',
+      ),
+      'info' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'All information of a subscriber.',
+      ),
+      'code' => array(
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+        'description' => 'Unique identifier for a subscriber on frontend.',
+      ),
+      'is_active' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+        'size' => 'tiny',
+      ),
+    ),
+    'primary key' => array('sc_id'),
+    'unique key' => array('email'),
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function sendinblue_uninstall() {
+  variable_del('sendinblue_access_key');
+  variable_del('sendinblue_account_email');
+  variable_del('sendinblue_account_username');
+  variable_del('sendinblue_account_data');
+  variable_del('sendinblue_access_token');
+  variable_del('sendinblue_attribute_lists');
+  variable_del('sendinblue_smtp_details');
+  variable_del('sendinblue_on');
+  variable_del('sendinblue_debug');
+
+  variable_set('mail_system', array('default-system' => 'DefaultMailSystem'));
+
+  $queue = DrupalQueue::get('sendinblue');
+  $queue->deleteQueue();
+  $queue = DrupalQueue::get('sendinblue_batch');
+  $queue->deleteQueue();
+}
+
+/**
+ * Implements hook_disable().
+ */
+function sendinblue_disable() {
+  variable_set('sendinblue_on', 0);
+  variable_set('mail_system', array('default-system' => 'DefaultMailSystem'));
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function sendinblue_requirements($phase) {
+  // Ensure translations don't break during installation.
+  $t = get_t();
+  $requirements = array();
+
+  $requirements['sendinblue']['title'] = $t('SendinBlue');
+  if (!function_exists('curl_init')) {
+     $requirements['sendinblue']['value'] = $t('The SendinBlue module need cURL module');
+     $requirements['sendinblue']['description'] = $t('The SendinBlue module need cURL module');
+     $requirements['sendinblue']['severity'] = REQUIREMENT_ERROR;
+     return $requirements;
+  }
+
+  if(module_exists('libraries')){
+     libraries_load('sendinblue');
+  }else{
+     $requirements['sendinblue']['value'] = $t('SendinBlue');
+     $requirements['sendinblue']['description'] = $t('The SendinBlue need Libraries Module and SendinBlue Library.');
+     $requirements['sendinblue']['severity'] = REQUIREMENT_ERROR;
+     return $requirements;
+  }
+
+  if (!file_exists('sites/all/libraries/sendinblue/vendor/sendinblue/api-v3-sdk/lib/Configuration.php')) {
+     $requirements['sendinblue']['value'] = $t('SendinBlue');
+     $requirements['sendinblue']['description'] = $t('The SendinBlue library has not been installed correctly.');
+     $requirements['sendinblue']['severity'] = REQUIREMENT_ERROR;
+     return $requirements;
+  }
+
+  $requirements['sendinblue']['value'] = $t('SendinBlue');
+  $requirements['sendinblue']['description'] = $t('The SendinBlue library is installed correctly. API settings are configured.');
+  $requirements['sendinblue']['severity'] = REQUIREMENT_OK;
+
+  return $requirements;
+}

@@ -1,0 +1,10 @@
+name = Autocomplete POST
+description = Treat slashes properly in autocomplete fields by using POST. (See 'Autocomplete Hack' for another approach.)
+core = 7.x
+
+; Information added by Drupal.org packaging script on 2016-02-18
+version = "7.x-1.3"
+core = "7.x"
+project = "autocomplete_post"
+datestamp = "1455755079"
+

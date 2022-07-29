@@ -1,0 +1,1106 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the dedikam module
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function dedikam_schema() {
+  $schema['dedikam_member_access'] = array (
+    'description' => 'Entity member_access',
+    'fields' => array(
+      'id' => array(
+        'description' => 'number associated with name',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'member_id' => array(
+        'description' => 'Member Id - reference to Users.uid',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+	  'payee' => array(
+        'description' => 'payee associated with member\'s order',
+        'type' => 'varchar',
+		'length' => '255',
+        'not null' => FALSE,
+      ),
+      'name' => array(
+        'description' => 'login used to access the computer account',
+        'type' => 'varchar',
+        'length' => '16',
+        'not null' => FALSE,
+      ),
+      'password' => array(
+        'description' => 'the encrypted form of the password',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'date_created' => array(
+        'description' => 'number of seconds from the epoch, UTC, when the access was created',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'expire' => array(
+        'description' => 'number of seconds from the epoch, UTC, until the account expires.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'termination' => array(
+        'description' => 'date to terminate account',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'quota' => array(
+        'description' => 'user\'s disk quota',
+        'type' => 'int',
+        'size' => 'big',
+        'not null' => FALSE,
+      ),
+      'lastquotacheck' => array(
+        'description' => 'user\'s disk usage at last check',
+        'type' => 'int',
+        'length' => 'big',
+        'not null' => FALSE,
+      ),
+      'quotacheckdatetime' => array(
+        'description' => 'number of seconds from the epoch, UTC, until the account expires.',
+        'type' => 'varchar',
+        'length' => '40',
+        'not null' => FALSE,
+      ),
+      'alert_quota_threshold' => array(
+        'description' => 'send mail if quota exceeds this threshold  (percentage)',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 90,
+      ),      
+      'nb_files' => array(
+	 'description' => 'nb files at last check',
+    	 'type' => 'int',
+	 'length' => 'big',
+	 'not null' => FALSE,
+      ),
+      'nb_dirs' => array(
+         'description' => 'nb directories: at last check',
+         'type' => 'int',
+         'length' => 'big',
+         'not null' => FALSE,
+      ),
+ 	'update_date' => array (
+         'description' => 'insert / update record timestamp',
+         'type' => 'int',
+         'not null' => TRUE,
+	  ),
+	  'level' => array (
+        'description' => 'security level for storage',
+        'type' => 'varchar',
+		'length' => '2',
+        'not null' => FALSE,
+	  ),
+	  'expire_remind' => array (
+        'description' => 'remind sent at 31, 15, 7, 3 et 0 days before account expires',
+        'type' => 'int',
+        'not null' => TRUE,
+		'default' => -1,
+	  ),
+	  'paid' => array (
+        'description' => 'amount paid for this access',
+        'type' => 'numeric',
+        'not null' => TRUE,
+		'default' => 0,
+	  ),
+	  'status' => array (
+        'description' => 'action status',
+        'type' => 'varchar',
+        'length' => 50,
+		'default' => '',
+	  ),
+	  'unblock_until' => array (
+        'description' => 'delay for cleaning access',
+        'type' => 'int',
+	  ),
+	  'lasterror' => array (
+        'description' => 'last system script error',
+        'type' => 'varchar',
+        'length' => 1000,
+		'default' => '',
+	  ),
+	  'notifybackup' => array (
+        'description' => 'sendmail after backup?',
+        'type' => 'int',
+		'default' => 1,
+	  ),
+	'iscsi' => array (
+        	'description' => 'is iscsi enabled ?',
+        	'type' => 'int',
+                'default' => 0,
+          ),
+	'iscsi_password' => array (
+		'description' => 'iscsi password',
+		'type' => 'varchar',
+		'length' => 20,
+	),
+	'iscsi_disks_enabled' => array (
+		'description' => 'are iscsi disks enabled',
+		'type' => 'int',
+		'default' => 1,
+	),
+        'cifs' => array (
+                'description' => 'is cifs enabled ?',
+                'type' => 'int',
+                'default' => 0,
+          ),
+        'cifs_password' => array (
+                'description' => 'cifs password',
+                'type' => 'varchar',
+                'length' => 20,
+        ),
+        'webdav' => array (
+                'description' => 'is webdav enabled ?',
+                'type' => 'int',
+                'default' => 0,
+          ),
+        'webdav_password' => array (
+                'description' => 'webdav password',
+                'type' => 'varchar',
+                'length' => 20,
+        ),
+        'oc_active' => array (
+                'description' => 'is oc active ?',
+                'type' => 'int',
+                'default' => 1,
+          ),
+         'pydio_active' => array (
+                'description' => 'is pydio active ?',
+                'type' => 'int',
+                'default' => 1,
+          ), 
+         'ssh_active' => array (
+                'description' => 'is ssh active ?',
+                'type' => 'int',
+                'default' => 1,
+          ),
+
+    ),
+    'primary key' => array('id'),
+	'unique keys' => array(
+	  'member_payee' => array('member_id', 'payee'),
+	  'name' => array('name')
+    ),
+  );
+
+  $schema['dedikam_owncloud_connect'] = array (
+    'description' => 'Entity owncloud_connect',
+    'fields' => array(
+      'key' => array(
+        'description' => 'Access Key',
+        'type' => 'varchar',
+		'length' => '255',
+        'not null' => TRUE,
+      ),
+      'id' => array(
+        'description' => 'Member access Id',
+        'type' => 'int',
+		'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'pass' => array(
+        'description' => 'Access password',
+        'type' => 'varchar',
+		'length' => '255',
+        'not null' => FALSE,
+      ),
+      'valid' => array(
+        'description' => 'number of seconds from the epoch, UTC, until the connexion to owncloud expires.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+    ),
+	'foreign keys' => array(
+		'dedikam_member_access' => array(
+			'table' => 'dedikam_member_access',
+			'columns' => array('id' => 'id'),
+		),
+	),
+   'primary key' => array('key'),
+  );
+
+  $schema['dedikam_sauvegarde'] = array (
+    'description' => 'Entity sauvegarde',
+    'fields' => array(
+      'id_sauvegarde' => array(
+        'description' => 'Id sauvegarde',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'type_sauvegarde' => array(
+        'description' => 'Incrémentale ou Externalisée',
+        'type' => 'char',
+        'not null' => TRUE,
+      ),
+      'access_id' => array(
+        'description' => 'Id du compte associé',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'dossier' => array(
+        'description' => 'dossier à sauvegarder',
+        'type' => 'varchar',
+		'length' => '255',
+      ),
+      'quota' => array(
+        'description' => 'Quota',
+        'type' => 'int',
+        'size' => 'big',
+      ),
+      'utilise' => array(
+        'description' => 'espace disque utilise',
+        'type' => 'int',
+        'size' => 'big',
+        'default' => 0,
+      ),
+      'dateverif' => array(
+        'description' => 'dernière date de vérification de l\'espace disque utilise',
+        'type' => 'int',
+      ),
+      'periodicite' => array(
+        'description' => 'Quotidien, Hebdomadaire, Mensuel, Ponctuel',
+        'type' => 'char',
+      ),
+      'roulement' => array(
+        'description' => 'durée de roulement',
+        'type' => 'int',
+      ),
+	  'active' => array(
+        'description' => 'demarrage auto ?',
+        'type' => 'int',
+      ),
+	  'derniere' => array(
+        'description' => 'date de la dernière sauvegarde (EPOCH)',
+        'type' => 'int',
+      ),
+      'etat' => array(
+        'description' => 'état de la sauvegarde',
+        'type' => 'varchar',
+		'length' => '255',
+      ),
+      'status' => array(
+        'description' => 'action status',
+        'type' => 'varchar',
+        'length' => 50,
+		'default' => '',
+	  ),
+	  'lasterror' => array (
+        'description' => 'last system script error',
+        'type' => 'varchar',
+        'length' => 1000,
+		'default' => '',
+	  ),
+      'bilan' => array (
+        'description' => 'journal d\'execution',
+        'type' => 'text',
+		'default' => '',
+	  ),
+      'id_serveur' => array (
+        'description' => 'id_serveur pour les EB',
+        'type' => 'int',
+		'default' => null,
+	  ),
+    ),
+	'foreign keys' => array(
+		'dedikam_member_access' => array(
+			'table' => 'dedikam_member_access',
+			'columns' => array('access_id' => 'id'),
+		),
+	),
+    'primary key' => array('id_sauvegarde'),
+  );
+
+  $schema['dedikam_incident'] = array (
+    'description' => 'Entity dedikam_incident',
+    'fields' => array(
+      'id_incident' => array(
+        'description' => 'Id incident',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'owncloud' => array(
+        'description' => 'Service owncloud',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'ssh' => array(
+        'description' => 'Service SSH',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'rsync' => array(
+        'description' => 'Service rsync',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'sftp' => array(
+        'description' => 'Service sftp',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'si' => array(
+        'description' => 'Service sauvegarde incrementale',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'eb' => array(
+        'description' => 'Service sauvegarde externalisée',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'pydio' => array(
+        'description' => 'Service Pydio',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'cifs' => array(
+        'description' => 'Service CIFS',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'iscsi' => array(
+        'description' => 'Service iSCSI',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'ftp' => array(
+        'description' => 'Services FTP/FTPS',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'webdav' => array(
+        'description' => 'Service WEBDAV',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'date_debut' => array(
+        'description' => 'Date de début de l\'incident, epoch',
+        'type' => 'int',
+      ),
+      'date_fin' => array(
+        'description' => 'Date de fin de l\'incident, epoch',
+        'type' => 'int',
+      ),
+      'description' => array(
+        'description' => 'description de l\'incident',
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('id_incident'),
+  );
+
+  $schema['dedikam_serveur'] = array (
+    'description' => 'Entity dedikam_serveur',
+    'fields' => array(
+      'id_serveur' => array(
+        'description' => 'Id serveur',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'nom' => array(
+        'description' => 'Nom du serveur',
+        'type' => 'varchar',
+		'length' => '50',
+        'not null' => TRUE,
+      ),
+      'adresse' => array(
+        'description' => 'adresse IP ou FQDN',
+        'type' => 'varchar',
+		'length' => '255',
+        'not null' => TRUE,
+      ),
+      'racine' => array(
+        'description' => 'repertoire racine du stockage',
+        'type' => 'varchar',
+        'length' => '255',
+      ),
+      'espace' => array(
+        'description' => 'espace de stockage total',
+        'type' => 'int',
+        'size' => 'big',
+        'default' => 0,
+      ),
+      'espace_restant' => array(
+        'description' => 'espace de stockage restant',
+        'type' => 'int',
+        'size' => 'big',
+        'default' => 0,
+      ),
+      'actif' => array(
+        'description' => 'actif ?',
+        'type' => 'int',
+        'default' => 1,
+      ),
+    ),
+    'primary key' => array('id_serveur'),
+  );
+
+  $schema['dedikam_expire_remind'] = array (
+    'description' => 'Entity dedikam_expire_remind',
+    'fields' => array(
+      'id_remind' => array(
+        'description' => 'Id expire_remind',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'access_name' => array(
+        'description' => 'Id access',
+        'type' => 'varchar',
+        'length' => '16',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'sent_date' => array(
+        'description' => 'date d envoi',
+        'type' => 'int',
+      ),
+      'expire_date' => array(
+        'description' => 'date d expiration',
+        'type' => 'int',
+      ),
+      'expire_remind' => array(
+        'description' => 'niveau de rappel',
+        'type' => 'int',
+      ),
+      'mail' => array(
+        'description' => 'adresse d envoi',
+        'type' => 'varchar',
+        'length' => '255',
+      ),
+      'status' => array(
+        'description' => 'statut de l envoi',
+        'type' => 'int',
+      ),
+      'error' => array(
+        'description' => 'message d erreur',
+        'type' => 'text',
+      ),
+      'message' => array(
+        'description' => 'message envoye',
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('id_remind'),
+  );
+     
+  $schema['dedikam_iscsi'] = array (
+    'description' => 'Entity dedikam_iscsi',
+    'fields' => array(
+      'id_iscsi' => array(
+        'description' => 'Id iscsi',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'access_id' => array(
+        'description' => 'Id access',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'disk_name' => array(
+        'description' => 'iscsi disk name',
+        'type' => 'varchar',
+        'length' => '16',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'disk_lun' => array(
+        'description' => 'iscsi disk lun #',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'disk_size' => array(
+        'description' => 'iscsi disk size',
+        'type' => 'int',
+        'size' => 'big',
+        'default' => 0,
+      ),
+      'disk_status' => array(
+        'description' => 'statut du disk',
+        'type' => 'varchar',
+	'length' => '16'
+      ),
+      'disk_error' => array(
+        'description' => 'message d erreur',
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('id_iscsi'),
+  );
+
+  $schema['dedikam_action'] = array (
+    'description' => 'Entity dedikam_actions',
+    'fields' => array(
+      'id_action' => array(
+        'description' => 'Id action',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'action_destination' => array(
+        'description' => 'script destination name',
+        'type' => 'varchar',
+        'length' => '100',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'action_key' => array(
+        'description' => 'object id on which action is registered',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'action_name' => array(
+        'description' => 'what is to be done',
+        'type' => 'varchar',
+        'length' => '100'
+      ),
+      'action_status' => array(
+        'description' => 'is action done',
+        'type' => 'int',
+	'default' => 0,
+      ),
+      'action_error' => array(
+        'description' => 'message d erreur',
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('id_action'),
+  );
+ 
+  return $schema;
+}
+
+/**
+ * Add tables dedikam_owncloud_connect
+**
+function dedikam_update_7220() {
+	db_create_table('dedikam_sauvegarde_incrementale', drupal_get_schema_unprocessed('dedikam', 'dedikam_sauvegarde_incrementale'));
+}
+*/
+
+/**
+ * Add status column
+**
+function dedikam_update_7221() {
+	db_add_field('dedikam_member_access', 'status', array (
+        'description' => 'action status',
+        'type' => 'varchar',
+        'length' => 50,
+		'default' => '',
+	  )
+	);
+
+	db_add_field('dedikam_member_access', 'active',array (
+        'description' => '1 if account is active',
+        'type' => 'int',
+        'not null' => TRUE,
+		'default' => 1,
+	  ));
+	db_drop_field('dedikam_owncloud_connect', 'active');
+
+}
+*/
+
+/**
+ * Add lasterror column
+**
+function dedikam_update_7222() {
+        db_add_field('dedikam_member_access', 'lasterror', array (
+        'description' => 'system script last error',
+        'type' => 'varchar',
+        'length' => 255,
+                'default' => '',
+          )
+        );
+}
+**
+ * Drop some of dedikam_member_access fields
+**
+function dedikam_update_7223() {
+	db_drop_field('dedikam_member_access', 'uid');
+	db_drop_field('dedikam_member_access', 'gid');
+	db_drop_field('dedikam_member_access', 'class');
+	db_drop_field('dedikam_member_access', 'change');
+	db_drop_field('dedikam_member_access', 'gecos');
+	db_drop_field('dedikam_member_access', 'homedir');
+	db_drop_field('dedikam_member_access', 'shell');
+	db_drop_field('dedikam_member_access', 'is_homedir_init');
+	db_drop_field('dedikam_member_access', 'is_password_init');
+	db_drop_field('dedikam_member_access', 'to_delete');
+	db_drop_field('dedikam_member_access', 'active');
+}
+
+
+**
+ * Add unblock_until, termination, and alert_quota_threshold columns
+**
+function dedikam_update_7224() {
+        db_add_field('dedikam_member_access', 'unblock_until', array (
+            'description' => 'delay for cleaning access',
+            'type' => 'int',
+            )
+        );
+        db_add_field('dedikam_member_access', 'alert_quota_threshold', array (
+            'description' => 'send mail if quota exceeds this threshold (percentage)',
+            'type' => 'int',
+            )
+        );
+        db_add_field('dedikam_member_access', 'termination', array (
+            'description' => 'date to terminate account',
+            'type' => 'int',
+            )
+        );
+}      
+
+
+**
+ * Add date_created column
+**
+function dedikam_update_7225() {
+        db_add_field('dedikam_member_access', 'date_created', array (
+            'description' => 'number of seconds from the epoch, UTC, when the access was created',
+            'type' => 'int',
+            )
+        );
+}      
+
+**
+ * Add tables dedikam_incident
+**
+function dedikam_update_7226() {
+    db_create_table('dedikam_incident', drupal_get_schema_unprocessed('dedikam', 'dedikam_incident'));
+}
+
+**
+ * Add table dedikam_incident
+**
+function dedikam_update_7227() {
+    db_drop_table('dedikam_incident');
+    db_create_table('dedikam_incident', drupal_get_schema_unprocessed('dedikam', 'dedikam_incident'));
+}
+
+
+**
+ * Add table dedikam_sauvegarde_externe
+**
+function dedikam_update_7231() {
+    db_drop_table('dedikam_sauvegarde_externe');
+    db_create_table('dedikam_sauvegarde_externe', drupal_get_schema_unprocessed('dedikam', 'dedikam_sauvegarde_externe'));
+}
+*/
+
+/**
+ * Add table dedikam_sauvegarde
+**/
+function dedikam_update_7233() {
+    db_drop_table('dedikam_sauvegarde');
+    db_create_table('dedikam_sauvegarde', drupal_get_schema_unprocessed('dedikam', 'dedikam_sauvegarde'));
+}
+
+/**
+ * drop table dedikam_sauvegarde_incrementale
+**/
+function dedikam_update_7234() {
+    db_drop_table('dedikam_sauvegarde_incrementale');
+}
+
+/**
+ * drop table dedikam_sauvegarde_externe
+**/
+function dedikam_update_7235() {
+    db_drop_table('dedikam_sauvegarde_externe');
+}
+
+/**
+ * add column status to table dedikam_sauvegarde
+**/
+function dedikam_update_7236() {
+        db_add_field('dedikam_sauvegarde', 'status', array (
+            'description' => 'action status',
+            'type' => 'varchar',
+            'length' => 50,
+            'default' => '',
+            )
+        );
+}
+
+/**
+ * add column lasterror to table dedikam_sauvegarde
+**/
+function dedikam_update_7237() {
+    db_add_field('dedikam_sauvegarde', 'lasterror', array (
+        'description' => 'last system script error',
+        'type' => 'varchar',
+        'length' => 1000,
+		'default' => '',
+	  )
+    );
+}
+
+/**
+ * add column utilise and bilan to table dedikam_sauvegarde
+ * create table dedikam_serveur
+**/
+function dedikam_update_7238() {
+/*
+    db_add_field('dedikam_sauvegarde', 'utilise', array (
+        'description' => 'espace disque utilise',
+        'type' => 'int',
+        'size' => 'big',
+        'default' => 0,
+	  )
+    );
+    db_add_field('dedikam_sauvegarde', 'bilan', array (
+        'description' => 'journal d\'execution',
+        'type' => 'text',
+		'default' => '',
+	  )
+    );
+    db_add_field('dedikam_sauvegarde', 'id_serveur', array (
+        'description' => 'id_serveur pour les EB',
+        'type' => 'int',
+		'default' => null,
+	  )
+    );
+*/
+    db_create_table('dedikam_serveur', drupal_get_schema_unprocessed('dedikam', 'dedikam_serveur'));
+}
+
+/**
+ * add column notifybackup to table dedikam_member_access
+**/
+function dedikam_update_7239() {
+    db_add_field('dedikam_member_access', 'notifybackup', array (
+        'description' => 'sendmail after backup?',
+        'type' => 'int',
+		'default' => 1,
+	  )
+    );
+}
+
+/**
+ * add column dateverif to table dedikam_sauvegarde
+**/
+function dedikam_update_7240() {
+    db_add_field('dedikam_sauvegarde', 'dateverif', array (
+        'description' => 'dernière date de vérification de l\'espace disque utilise',
+        'type' => 'int',
+        )
+    );
+}
+
+/**
+ * add columns si and eb to table dedikam_incident
+**/
+function dedikam_update_7241() {
+    db_add_field('dedikam_incident', 'si', array (
+        'description' => 'Service sauvegarde incrementale',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ));
+    db_add_field('dedikam_incident', 'eb', array (
+        'description' => 'Service sauvegarde externalisée',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ));
+}
+
+/**
+ * add columns pydio to table dedikam_incident
+**/
+function dedikam_update_7242() {
+    db_add_field('dedikam_incident', 'pydio', array (
+        'description' => 'Service Pydio',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ));
+}
+
+/**
+ * add table dedikam_expire_remind
+**/
+function dedikam_update_7243() {
+    db_create_table('dedikam_expire_remind', drupal_get_schema_unprocessed('dedikam', 'dedikam_expire_remind'));
+}
+
+/**
+ * change dedikam_expire_remind structure
+**/
+function dedikam_update_7245() {
+    db_drop_field('dedikam_expire_remind','id_access');
+/*
+    db_add_field('dedikam_expire_remind', 'access_name', array (
+        'description' => 'Access name',
+        'type' => 'varchar',
+        'length' => '16',
+        'not null' => TRUE,
+        'default' => '',
+      ));
+*/
+}
+
+/**
+ * ajout des colonnes nd_files et nb_dirs
+**/
+function dedikam_update_7246(){
+	db_add_field('dedikam_member_access', 'nb_files', array(
+         'description' => 'nb files at last check',
+         'type' => 'int',
+         'length' => 'big',
+         'not null' => FALSE,
+      ));
+	db_add_field('dedikam_member_access', 'nb_dirs', array(
+         'description' => 'nb directories at last check',
+         'type' => 'int',
+         'length' => 'big',
+         'not null' => FALSE,
+      ));
+}
+
+/**
+ * add table dedikam_iscsi
+**/
+function dedikam_update_7247() {
+    db_create_table('dedikam_iscsi', drupal_get_schema_unprocessed('dedikam', 'dedikam_iscsi'));
+}
+
+/**
+ * add iscsi column to dedikam_member_access
+*/
+function dedikam_update_7248() {
+	db_add_field('dedikam_member_access', 'iscsi', array (
+                'description' => 'is iscsi enabled ?',
+                'type' => 'int',
+                'default' => 0,
+          ));
+}
+
+/**
+ * change dedikam_iscsi.iscsi_status column type
+*/
+function dedikam_update_7249() {
+    db_drop_field('dedikam_iscsi','disk_status');
+    db_add_field('dedikam_iscsi', 'disk_status', array (
+        'description' => 'iscsi disk status',
+        'type' => 'varchar',
+        'length' => '16',
+      ));
+}
+
+/**
+ * move iscsi password to dedikam_member_access
+*/
+function dedikam_update_7250() {
+    db_drop_field('dedikam_iscsi','disk_password');
+    db_add_field('dedikam_member_access', 'iscsi_password', array (
+                'description' => 'iscsi password',
+                'type' => 'varchar',
+                'length' => 20,
+      ));
+
+}
+
+/**
+ * change iscsi access id type
+*/
+function dedikam_update_7251() {
+	db_drop_table('dedikam_iscsi');	
+	db_create_table('dedikam_iscsi', drupal_get_schema_unprocessed('dedikam', 'dedikam_iscsi'));
+}
+
+/**
+ * add iscsi_disks_enabled column to dedikam_member_access
+*/
+function dedikam_update_7252() {
+    db_add_field('dedikam_member_access', 'iscsi_disks_enabled', array (
+                'description' => 'are iscsi disks enabled',
+                'type' => 'int',
+                'default' => 1,      
+	));
+}
+
+/**
+ * add column disk_lun to table dedikam_iscsi
+*/
+function dedikam_update_7253() {
+        db_drop_table('dedikam_iscsi');
+        db_create_table('dedikam_iscsi', drupal_get_schema_unprocessed('dedikam', 'dedikam_iscsi'));
+}
+
+/**
+ * add nfs and cifs columns to dedikam_member_access
+*/
+function dedikam_update_7254() {
+        db_add_field('dedikam_member_access', 'nfs', array (
+                'description' => 'is nfs enabled ?',
+                'type' => 'int',
+                'default' => 0,
+          ));
+        db_add_field('dedikam_member_access', 'cifs', array (
+                'description' => 'is cifs enabled ?',
+                'type' => 'int',
+                'default' => 0,
+          ));
+}
+
+/**
+ * drop column dedikam_member_access.nfs
+*/
+function dedikam_update_7255() {
+    db_drop_field('dedikam_member_access','nfs');
+}
+
+/**
+ * add dedikam_action
+*/
+function dedikam_update_7256() {
+        db_create_table('dedikam_action', drupal_get_schema_unprocessed('dedikam', 'dedikam_action'));
+}
+
+/**
+ * add cifs_password columns to dedikam_member_access
+*/
+function dedikam_update_7257() {
+        db_add_field('dedikam_member_access', 'cifs_password', array (
+                'description' => 'cifs password',
+                'type' => 'varchar',
+                'length' => 20,
+          ));
+}
+ 
+/**
+ * add action_error columns to dedikam_action
+*/
+function dedikam_update_7258() {
+        db_add_field('dedikam_action', 'action_error', array (
+        'description' => 'message d erreur',
+        'type' => 'text',
+        ));
+}
+
+/**
+ * add columns cifs and iscsi to table dedikam_incident
+**/
+function dedikam_update_7259() {
+    db_add_field('dedikam_incident', 'cifs', array (
+        'description' => 'Service CIFS',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ));
+    db_add_field('dedikam_incident', 'iscsi', array (
+        'description' => 'Service iSCSI',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ));
+}
+
+/**
+ * add column ftp to table dedikam_incident
+**/
+function dedikam_update_7260() {
+    db_add_field('dedikam_incident', 'ftp', array (
+        'description' => 'Services FTP/FTPS',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ));
+}
+
+/**
+ * add webdav option to table dedikam_incident
+**/
+function dedikam_update_7261() {
+    db_add_field('dedikam_member_access', 'webdav', array (
+        'description' => 'is webdav enabled ?',
+        'type' => 'int',
+        'default' => 0,
+      ));
+    db_add_field('dedikam_member_access', 'webdav_password', array (
+        'description' => 'webdav password',
+        'type' => 'varchar',
+        'length' => 20,
+      ));
+}
+ 
+/**
+ * add column webdav to table dedikam_incident
+**/
+function dedikam_update_7262() {
+    db_add_field('dedikam_incident', 'webdav', array (
+        'description' => 'Service WEBDAV',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ));
+}
+
+/**
+ * add oc_active and pydio_active option to table dedikam_member_access
+**/
+function dedikam_update_7263() {
+    db_add_field('dedikam_member_access', 'oc_active', array (
+        'description' => 'is oc active ?',
+        'type' => 'int',
+        'default' => 1,
+      ));
+    db_add_field('dedikam_member_access', 'pydio_active', array (
+        'description' => 'is pydio active ?',
+        'type' => 'int',
+        'default' => 1,
+      ));
+}
+
+/**
+ * add ssh_active option to table dedikam_member_access
+**/
+function dedikam_update_7264() {
+    db_add_field('dedikam_member_access', 'ssh_active', array (
+    	'description' => 'is ssh active ?',
+        'type' => 'int',
+        'default' => 1,
+    ));
+}
+                                                                     
+function dedikam_enable() {
+  $seq = "{dedikam_member_access}_id_seq";
+  db_query("SELECT setval('$seq' , 1000)", array());
+  db_query("SELECT setval('$seq' , case when MAX(id) < 1000 then 1000 ELSE MAX(id)+1 END) FROM {dedikam_member_access}", array());
+  $seq = "{dedikam_incident}_id_incident_seq";
+  db_query("SELECT setval('$seq' , 1)", array());
+  db_query("SELECT setval('$seq' , MAX(id_incident)+1) FROM {dedikam_incident}", array());
+}

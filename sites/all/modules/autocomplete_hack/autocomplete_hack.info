@@ -1,0 +1,12 @@
+name = Autocomplete Hack
+description = Treat slashes properly in autocomplete fields by encoding them. (See 'Autocomplete POST' for another approach.)
+core = 7.x
+version = "7.x-1.0"
+files[] = autocomplete_hack.module
+
+; Information added by drupal.org packaging script on 2013-10-04
+version = "7.x-1.0"
+core = "7.x"
+project = "autocomplete_hack"
+datestamp = "1380871725"
+
